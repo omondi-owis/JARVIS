@@ -1,0 +1,37 @@
+{
+  "devices": [
+    {
+      "device_id": "living-room-light-01",
+      "name": "Living Room Main Light",
+      "type": "light",
+      "risk": "LOW",
+      "mqtt_topic": "home/living_room/light_01",
+      "room": "living_room",
+      "capabilities": ["on", "off", "dim"]
+    },
+    {
+      "device_id": "bedroom-light-01",
+      "name": "Bedroom Light",
+      "type": "light",
+      "risk": "LOW",
+      "mqtt_topic": "home/bedroom/light_01",
+      "room": "bedroom"
+    },
+    {
+      "device_id": "front-door-lock",
+      "name": "Front Door Lock",
+      "type": "smart_lock",
+      "risk": "HIGH",
+      "mqtt_topic": "home/front_door/lock",
+      "requires_confirmation": true,
+      "notes": "High-risk physical security device"
+    },
+    {
+      "device_id": "thermostat-living",
+      "name": "Living Room Thermostat",
+      "type": "thermostat",
+      "risk": "MEDIUM",
+      "mqtt_topic": "home/living_room/thermostat"
+    }
+  ]
+}

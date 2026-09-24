@@ -1,0 +1,29 @@
+{
+  "registry_version": "1.0",
+  "owner": "Raphael",
+  "devices": [
+    {
+      "device_id": "ubuntu-prod-01",
+      "identity": "Ubuntu Production Server",
+      "owner": "Raphael",
+      "trust_status": "trusted",
+      "device_type": "ubuntu_server",
+      "operating_system": "Ubuntu 22.04 LTS",
+      "network_identity": "tailscale IP or private IP",
+      "available_capabilities": ["bash", "systemd", "docker", "ufw", "wazuh_agent"],
+      "permission_scope": "server_management_low_medium",
+      "revocation_status": "active"
+    },
+    {
+      "device_id": "sec-lab-kali",
+      "identity": "Security Lab - Kali",
+      "owner": "Raphael",
+      "trust_status": "trusted",
+      "device_type": "kali_lab",
+      "operating_system": "Kali Linux",
+      "available_capabilities": ["nmap", "wireshark", "security_tools"],
+      "permission_scope": "lab_only",
+      "revocation_status": "active"
+    }
+  ]
+}

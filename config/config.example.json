@@ -1,0 +1,71 @@
+{
+  "system": {
+    "name": "J.A.R.V.I.S.",
+    "version": "Advanced Personal Assistant v1.0",
+    "owner": "Raphael",
+    "environment": "production",
+    "log_level": "INFO"
+  },
+  "security": {
+    "trust_chain": [
+      "VOICE_RECOGNITION",
+      "AUTHENTICATED_DEVICE",
+      "PASSKEY_MFA",
+      "SESSION_TOKEN",
+      "PERMISSION_GATEWAY",
+      "TOOL_AUTHORIZATION",
+      "TOOL_EXECUTION",
+      "RESULT_VERIFICATION",
+      "AUDIT_LOG",
+      "VOICE_TEXT_RESPONSE"
+    ],
+    "session_token_ttl_seconds": 900,
+    "require_mfa_for_high_risk": true,
+    "voice_alone_never_authorizes": [
+      "privileged_system_access",
+      "password_changes",
+      "financial_transactions",
+      "destructive_operations",
+      "security_policy_changes",
+      "physical_security"
+    ]
+  },
+  "devices": {
+    "registry_path": "config/device_registry.json",
+    "revocable": true
+  },
+  "audit": {
+    "log_path": "logs/audit.jsonl",
+    "retention_days": 90
+  },
+  "integrations": {
+    "wazuh": {
+      "enabled": false,
+      "api_url": "https://WAZUH_SERVER:55000",
+      "note": "Credentials must be in secrets manager, NOT in this file"
+    },
+    "mlinziops": {
+      "enabled": false,
+      "api_url": "https://MLINZIOPS_SERVER/api",
+      "note": "Use secrets manager"
+    },
+    "telephony": {
+      "enabled": false,
+      "provider": "twilio_or_asterisk",
+      "note": "Requires SIP gateway configuration"
+    },
+    "iot": {
+      "enabled": false,
+      "gateway": "mqtt_or_homeassistant",
+      "devices_registry": "config/iot_devices.json"
+    },
+    "tailscale": {
+      "enabled": false,
+      "note": "Recommended for secure remote access"
+    }
+  },
+  "routines": {
+    "morning": ["authenticate", "check_system_status", "activate_configured_devices", "report_alerts"],
+    "night": ["check_doors_sensors", "turn_off_configured_devices", "enable_security_systems", "check_server_health", "report_outstanding_alerts"]
+  }
+}
