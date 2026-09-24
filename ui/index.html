@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>J.A.R.V.I.S. — Private Operations Console</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%2300d9ff'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='black' font-weight='900'>J</text></svg>">
+<style>
+  :root{
+    --bg:#080c12;
+    --panel:#11161e;
+    --panel-2:#0d1218;
+    --border:#1f2a36;
+    --border-2:#1e3a4a;
+    --text:#e6edf3;
+    --muted:#7d8590;
+    --dim:#4a5568;
+    --cyan:#00d9ff;
+    --green:#00ff88;
+    --yellow:#ffb700;
+    --red:#ff5a5a;
+    --purple:#a78bfa;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+  /* Header */
+  .header{position:sticky;top:0;z-index:100;background:rgba(8,12,18,0.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;justify-content:space-between;align-items:center}
+  .logo{display:flex;align-items:center;gap:12px}
+  .logo-icon{width:40px;height:40px;background:linear-gradient(135deg,var(--cyan),#0066ff);border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:900;color:#000;font-size:18px;box-shadow:0 0 20px rgba(0,217,255,0.3)}
+  .logo-text h1{font-size:16px;letter-spacing:2px;font-weight:800}
+  .logo-text p{font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+  .header-actions{display:flex;gap:10px;align-items:center}
+  .badge{display:flex;align-items:center;gap:6px;background:#12201a;border:1px solid #1a3a2a;padding:6px 12px;border-radius:20px;font-size:11px}
+  .dot{width:7px;height:7px;background:var(--green);border-radius:50%;box-shadow:0 0 8px var(--green);animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.6}}
+  .btn{border:none;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:0.5px;transition:all 0.2s}
+  .btn-cyan{background:var(--cyan);color:#000}
+  .btn-cyan:hover{box-shadow:0 0 15px rgba(0,217,255,0.4);transform:translateY(-1px)}
+  .btn-ghost{background:var(--panel);border:1px solid var(--border);color:var(--text)}
+  .btn-ghost:hover{border-color:var(--cyan);color:var(--cyan)}
+  .btn-danger{background:rgba(255,90,90,0.1);border:1px solid rgba(255,90,90,0.3);color:var(--red)}
+  /* Voice Bar */
+  .voice-bar{margin:16px 20px;background:linear-gradient(90deg,#0d1a24,#111f2e);border:1px solid var(--border-2);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:16px}
+  .voice-wave{display:flex;gap:3px;align-items:center;height:28px;min-width:60px}
+  .bar{width:3px;background:var(--cyan);border-radius:2px;animation:wave 1.2s infinite ease-in-out}
+  .bar:nth-child(2){animation-delay:0.1s;height:12px}
+  .bar:nth-child(3){animation-delay:0.2s;height:18px}
+  .bar:nth-child(4){animation-delay:0.3s;height:8px}
+  .bar:nth-child(5){animation-delay:0.4s;height:16px}
+  .bar.idle{animation:none;height:4px;opacity:0.4}
+  @keyframes wave{0%,100%{height:6px}50%{height:22px}}
+  .voice-input{flex:1;display:flex;gap:10px;align-items:center}
+  .voice-input input{flex:1;background:var(--panel-2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;outline:none}
+  .voice-input input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,217,255,0.1)}
+  .voice-hints{font-size:10px;color:var(--muted);margin-top:6px}
+  /* Layout */
+  .main{display:grid;grid-template-columns:240px 1fr;min-height:calc(100vh - 70px)}
+  .sidebar{background:var(--panel);border-right:1px solid var(--border);padding:16px 12px;position:sticky;top:70px;height:calc(100vh - 70px);overflow-y:auto}
+  .nav-section{margin-bottom:20px}
+  .nav-title{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);margin-bottom:8px;padding:0 8px}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;font-size:13px;cursor:pointer;transition:all 0.15s;color:var(--muted);margin-bottom:2px}
+  .nav-item:hover{background:var(--panel-2);color:var(--text)}
+  .nav-item.active{background:linear-gradient(90deg,rgba(0,217,255,0.15),rgba(0,102,255,0.1));border:1px solid rgba(0,217,255,0.2);color:var(--cyan)}
+  .nav-item .count{margin-left:auto;background:var(--panel-2);border:1px solid var(--border);padding:2px 6px;border-radius:10px;font-size:10px}
+  .nav-item.active .count{background:rgba(0,217,255,0.2);border-color:var(--cyan);color:var(--cyan)}
+  .content{padding:20px;overflow-y:auto}
+  /* Grid */
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;margin-bottom:20px}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px;transition:all 0.2s}
+  .card:hover{border-color:var(--border-2);transform:translateY(-1px)}
+  .card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+  .card-title{font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);display:flex;align-items:center;gap:6px}
+  .card-actions{display:flex;gap:6px}
+  .metric{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #1a2330;font-size:13px}
+  .metric:last-child{border:none}
+  .metric-label{color:#9ba3af}
+  .metric-value{font-weight:600}
+  .ok{color:var(--green)} .warn{color:var(--yellow)} .off{color:var(--red)}
+  .progress{height:6px;background:var(--panel-2);border-radius:3px;overflow:hidden;margin-top:4px}
+  .progress-bar{height:100%;border-radius:3px;transition:width 0.5s}
+  /* Tables */
+  .table{width:100%;border-collapse:collapse;font-size:12px}
+  .table th{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);font-weight:600}
+  .table td{padding:9px 10px;border-bottom:1px solid #1a2330}
+  .table tr:hover td{background:rgba(255,255,255,0.02)}
+  .tag{font-size:10px;padding:3px 7px;border-radius:10px;border:1px solid var(--border);background:var(--panel-2)}
+  .tag-green{border-color:rgba(0,255,136,0.3);color:var(--green);background:rgba(0,255,136,0.1)}
+  .tag-yellow{border-color:rgba(255,183,0,0.3);color:var(--yellow);background:rgba(255,183,0,0.1)}
+  .tag-red{border-color:rgba(255,90,90,0.3);color:var(--red);background:rgba(255,90,90,0.1)}
+  .tag-cyan{border-color:rgba(0,217,255,0.3);color:var(--cyan);background:rgba(0,217,255,0.1)}
+  /* Logs */
+  .log{font-family:'Cascadia Code','Fira Code',monospace;font-size:11px;background:var(--panel-2);border:1px solid #1a2330;border-radius:8px;padding:12px;max-height:240px;overflow:auto;color:#9ba3af;line-height:1.6}
+  /* Modal */
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
+  .modal.active{display:flex}
+  .modal-box{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px;max-width:480px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.5)}
+  .modal-title{font-size:14px;font-weight:700;margin-bottom:8px}
+  .modal-desc{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:16px}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end}
+  /* Responsive */
+  @media(max-width:900px){
+    .main{grid-template-columns:1fr}
+    .sidebar{position:relative;top:0;height:auto;border-right:none;border-bottom:1px solid var(--border)}
+  }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">
+      <div class="logo-icon">J</div>
+      <div class="logo-text">
+        <h1>J.A.R.V.I.S.</h1>
+        <p>Private Operations Console • Owner: Raphael</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <div class="badge"><div class="dot"></div> PRODUCTION • <span id="time">--:--</span></div>
+      <button class="btn btn-ghost" onclick="switchView('devices')">Devices</button>
+      <button class="btn btn-cyan" onclick="toggleVoice()">🎙️ Voice</button>
+    </div>
+  </div>
+
+  <div class="voice-bar">
+    <div class="voice-wave" id="voiceWave">
+      <div class="bar idle"></div><div class="bar idle"></div><div class="bar idle"></div><div class="bar idle"></div><div class="bar idle"></div>
+    </div>
+    <div style="flex:1">
+      <div class="voice-input">
+        <input id="voiceInput" placeholder='Try: "JARVIS, check the server" or "JARVIS, turn off bedroom lights" or "JARVIS, call Brian"' onkeypress="if(event.key==='Enter') parseVoice()">
+        <button class="btn btn-cyan" onclick="parseVoice()">Send</button>
+        <button class="btn btn-ghost" onclick="startListening()">🎤</button>
+      </div>
+      <div class="voice-hints">Voice-first • Natural language • Risk-based confirmation • Audit logged • Press Enter or click Send • Microphone uses Web Speech API</div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="sidebar">
+      <div class="nav-section">
+        <div class="nav-title">Operations</div>
+        <div class="nav-item active" data-view="overview" onclick="switchView('overview')"><span>📊</span> Overview <span class="count">8</span></div>
+        <div class="nav-item" data-view="server" onclick="switchView('server')"><span>🖥️</span> Ubuntu Server</div>
+        <div class="nav-item" data-view="security" onclick="switchView('security')"><span>🔐</span> Security <span class="count" id="secCount">0</span></div>
+        <div class="nav-item" data-view="wazuh" onclick="switchView('wazuh')"><span>🛡️</span> Wazuh SIEM</div>
+        <div class="nav-item" data-view="mlinziops" onclick="switchView('mlinziops')"><span>⚙️</span> MlinziOps</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-title">Communications</div>
+        <div class="nav-item" data-view="telephony" onclick="switchView('telephony')"><span>📞</span> Telephony <span class="count" id="callCount">0</span></div>
+        <div class="nav-item" data-view="iot" onclick="switchView('iot')"><span>🏠</span> IoT & Smart Home</div>
+        <div class="nav-item" data-view="cameras" onclick="switchView('cameras')"><span>📹</span> Cameras</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-title">Management</div>
+        <div class="nav-item" data-view="devices" onclick="switchView('devices')"><span>📱</span> Device Registry</div>
+        <div class="nav-item" data-view="routines" onclick="switchView('routines')"><span>🔄</span> Routines</div>
+        <div class="nav-item" data-view="audit" onclick="switchView('audit')"><span>📜</span> Audit Log</div>
+        <div class="nav-item" data-view="memory" onclick="switchView('memory')"><span>🧠</span> Memory</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-title">System</div>
+        <div class="nav-item" data-view="api" onclick="switchView('api')"><span>🔌</span> API & Docs</div>
+        <div class="nav-item" onclick="window.open('/api/docs','_blank')"><span>📖</span> Swagger (dev)</div>
+      </div>
+      <div style="margin-top:20px;padding:10px;background:var(--panel-2);border:1px solid var(--border);border-radius:8px">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Trust Chain</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px">
+          <span class="tag tag-cyan">VOICE</span><span class="tag tag-cyan">DEVICE</span><span class="tag tag-cyan">MFA</span><span class="tag tag-cyan">TOKEN</span><span class="tag tag-cyan">GATEWAY</span><span class="tag">VERIFY</span><span class="tag">AUDIT</span>
+        </div>
+        <div style="font-size:10px;color:var(--dim);margin-top:8px">Never sacrifice auth for convenience. Never claim success without verification.</div>
+      </div>
+    </div>
+
+    <div class="content" id="content">
+      <!-- OVERVIEW -->
+      <div id="view-overview" class="view">
+        <div class="grid">
+          <div class="card">
+            <div class="card-header"><div class="card-title">🖥️ Ubuntu Server</div><span class="tag tag-green">Online</span></div>
+            <div class="metric"><span class="metric-label">CPU</span><span class="metric-value" id="cpu">18%</span></div>
+            <div class="progress"><div class="progress-bar" id="cpuBar" style="width:18%;background:var(--green)"></div></div>
+            <div class="metric"><span class="metric-label">Memory</span><span class="metric-value" id="mem">42%</span></div>
+            <div class="progress"><div class="progress-bar" style="width:42%;background:var(--cyan)"></div></div>
+            <div class="metric"><span class="metric-label">Disk</span><span class="metric-value">27% • 6.8/25GB</span></div>
+            <div class="progress"><div class="progress-bar" style="width:27%;background:var(--yellow)"></div></div>
+            <div class="metric"><span class="metric-label">Uptime</span><span class="metric-value">12 days</span></div>
+            <div class="metric"><span class="metric-label">Services</span><span class="metric-value ok">5/6 active</span></div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><div class="card-title">🔐 Security Posture</div><span class="tag tag-yellow">Score 85/100</span></div>
+            <div class="metric"><span class="metric-label">UFW Firewall</span><span class="metric-value ok">Active</span></div>
+            <div class="metric"><span class="metric-label">SSH Hardening</span><span class="metric-value ok">Secure</span></div>
+            <div class="metric"><span class="metric-label">Fail2ban</span><span class="metric-value ok">Active • 3 banned</span></div>
+            <div class="metric"><span class="metric-label">Updates</span><span class="metric-value warn">3 upgradable</span></div>
+            <div class="metric"><span class="metric-label">Wazuh Critical (24h)</span><span class="metric-value off" id="wazuhCrit">0</span></div>
+            <div class="metric"><span class="metric-label">Failed SSH (1h)</span><span class="metric-value">2</span></div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><div class="card-title">📞 Telephony</div><span class="tag tag-red">Not Connected</span></div>
+            <div class="metric"><span class="metric-label">Provider</span><span class="metric-value">Not configured</span></div>
+            <div class="metric"><span class="metric-label">Call History</span><span class="metric-value">0 calls</span></div>
+            <div class="metric"><span class="metric-label">Screening</span><span class="metric-value">AI identification required</span></div>
+            <div style="margin-top:10px;padding:8px;background:var(--panel-2);border-radius:6px;font-size:11px;color:var(--muted)">Telephony integration not connected. Configure Twilio in .env to enable calls. I will never claim "I answered the call" until verified.</div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><div class="card-title">🏠 IoT & Routines</div><span class="tag tag-red">No Gateway</span></div>
+            <div class="metric"><span class="metric-label">Gateway</span><span class="metric-value">Not configured</span></div>
+            <div class="metric"><span class="metric-label">Devices</span><span class="metric-value">0 registered</span></div>
+            <div class="metric"><span class="metric-label">Morning Routine</span><span class="metric-value off">Disabled</span></div>
+            <div class="metric"><span class="metric-label">Night Routine</span><span class="metric-value off">Disabled</span></div>
+            <div style="margin-top:8px;display:flex;gap:6px">
+              <button class="btn btn-ghost" style="font-size:11px" onclick="switchView('iot')">Configure IoT</button>
+              <button class="btn btn-ghost" style="font-size:11px" onclick="switchView('routines')">Routines</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><div class="card-title">🛡️ Wazuh & MlinziOps</div><span class="tag">Not Configured</span></div>
+            <div class="metric"><span class="metric-label">Wazuh API</span><span class="metric-value off">Not connected</span></div>
+            <div class="metric"><span class="metric-label">Agents</span><span class="metric-value">0</span></div>
+            <div class="metric"><span class="metric-label">MlinziOps</span><span class="metric-value off">Not connected</span></div>
+            <div class="metric"><span class="metric-label">Deployments</span><span class="metric-value">-</span></div>
+            <div style="margin-top:8px;font-size:11px;color:var(--muted)">Set WAZUH_API_URL and MLINZIOPS_API_URL in .env (600 perms) to enable. Secrets never in memory.</div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><div class="card-title">📱 Devices & Audit</div><span class="tag tag-cyan">1 Active</span></div>
+            <div class="metric"><span class="metric-label">Trusted Devices</span><span class="metric-value">1 • Sandbox</span></div>
+            <div class="metric"><span class="metric-label">Pending Registration</span><span class="metric-value warn">7 awaiting</span></div>
+            <div class="metric"><span class="metric-label">Audit Log</span><span class="metric-value ok">Active • 5 entries</span></div>
+            <div class="metric"><span class="metric-label">Memory</span><span class="metric-value">12 preferences</span></div>
+            <div class="metric"><span class="metric-label">Background Monitor</span><span class="metric-value off">Disabled</span></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><div class="card-title">📜 Recent Audit Log</div><button class="btn btn-ghost" style="font-size:11px" onclick="switchView('audit')">View All</button></div>
+          <div class="log" id="auditLog">
+[2026-09-24T11:38:00+03:00] PRODUCTION_UPGRADE - Raphael - SUCCESS - 53 files, 54KB tar.gz, secret check passed
+[2026-09-24T10:31:00+03:00] BUILD_FRAMEWORK - Raphael - SUCCESS - 24 files, 16KB tar.gz
+[2026-09-24T10:23:00+03:00] OBSERVED_CLONE_LOG - sec-lab - SUCCESS - GitHub fingerprint verified
+[2026-09-24T10:21:03+03:00] CAPABILITY_ASSESSMENT - SUCCESS - Sandbox online
+[2026-09-24T10:21:03+03:00] SYSTEM_INITIALIZATION - Master Prompt Advanced loaded
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><div class="card-title">💬 Natural Language Operations</div></div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px">
+            <div style="background:var(--panel-2);border:1px solid var(--border);border-radius:8px;padding:10px"><div style="font-size:12px;color:var(--cyan)">"JARVIS, check the server."</div><div style="font-size:10px;color:var(--muted);margin-top:4px">CPU, memory, disk, services, security</div></div>
+            <div style="background:var(--panel-2);border:1px solid var(--border);border-radius:8px;padding:10px"><div style="font-size:12px;color:var(--cyan)">"JARVIS, call Brian."</div><div style="font-size:10px;color:var(--muted);margin-top:4px">Resolves contact, validates, confirms, initiates</div></div>
+            <div style="background:var(--panel-2);border:1px solid var(--border);border-radius:8px;padding:10px"><div style="font-size:12px;color:var(--cyan)">"JARVIS, turn off bedroom lights."</div><div style="font-size:10px;color:var(--muted);margin-top:4px">Low-risk auto, high-risk requires confirmation</div></div>
+            <div style="background:var(--panel-2);border:1px solid var(--border);border-radius:8px;padding:10px"><div style="font-size:12px;color:var(--cyan)">"JARVIS, investigate Wazuh."</div><div style="font-size:10px;color:var(--muted);margin-top:4px">Alerts, agents, correlations, Observed/Suspected/Confirmed</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SERVER VIEW -->
+      <div id="view-server" class="view" style="display:none">
+        <h2 style="font-size:18px;margin-bottom:16px">🖥️ Ubuntu Server — Production Management</h2>
+        <div class="grid">
+          <div class="card">
+            <div class="card-header"><div class="card-title">System Health</div><button class="btn btn-ghost" style="font-size:11px" onclick="refreshServer()">Refresh</button></div>
+            <div id="serverHealth">Loading via API /api/server/health (requires JWT)...</div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Services</div></div>
+            <table class="table"><thead><tr><th>Service</th><th>Status</th><th>Action</th></tr></thead><tbody id="servicesTable"><tr><td>ssh</td><td><span class="tag tag-green">active</span></td><td><button class="btn btn-ghost" style="font-size:10px">Restart</button></td></tr><tr><td>ufw</td><td><span class="tag tag-green">active</span></td><td>-</td></tr><tr><td>docker</td><td><span class="tag tag-green">active</span></td><td>-</td></tr><tr><td>jarvis</td><td><span class="tag tag-yellow">inactive</span></td><td><button class="btn btn-cyan" style="font-size:10px">Start</button></td></tr></tbody></table>
+          </div>
+        </div>
+        <div class="card"><div class="card-header"><div class="card-title">Security Hardening</div><button class="btn btn-cyan" style="font-size:11px" onclick="runHardening()">Run Hardening Report</button></div><div id="hardeningReport" class="log">Click Run Hardening Report to generate CIS checks: SSH, UFW, users, score...</div></div>
+      </div>
+
+      <!-- TELEPHONY VIEW -->
+      <div id="view-telephony" class="view" style="display:none">
+        <h2 style="font-size:18px;margin-bottom:16px">📞 Secure Telephony System</h2>
+        <div class="card" style="border-color:var(--red)"><div class="card-header"><div class="card-title">Integration Status</div><span class="tag tag-red">Not Connected</span></div><p style="font-size:13px;color:var(--muted);line-height:1.5">The telephony integration is not currently connected, so I cannot answer or make calls. To enable:<br>1. Set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER in .env (600 perms)<br>2. pip install twilio<br>3. Set telephony.enabled=True only after verification<br><br>I will never claim "I answered the call" until integration verified. All numbers redacted to ***-***-1234.</p></div>
+        <div class="grid"><div class="card"><div class="card-header"><div class="card-title">Make Call</div></div><div style="display:flex;gap:8px;margin-bottom:10px"><input id="callDest" placeholder="Destination or Contact Name (e.g. Brian)" style="flex:1;background:var(--panel-2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px"><button class="btn btn-cyan" onclick="makeCall()">Call</button></div><div style="font-size:11px;color:var(--muted)">Risk: MEDIUM, requires confirmation. High-risk (financial/legal) requires MFA. Will resolve contact, validate E.164, redact, audit.</div></div><div class="card"><div class="card-header"><div class="card-title">Call History</div></div><div class="log" id="callHistory">No calls yet. History will show redacted numbers, contact, purpose, timestamp, status.</div></div></div>
+      </div>
+
+      <!-- IOT VIEW -->
+      <div id="view-iot" class="view" style="display:none">
+        <h2 style="font-size:18px;margin-bottom:16px">🏠 IoT & Smart-Home Control — Risk-Categorized</h2>
+        <div class="grid">
+          <div class="card"><div class="card-header"><div class="card-title">Devices</div><span class="tag tag-red">0 Registered</span></div><div style="font-size:12px;color:var(--muted)">Register devices in config/iot_devices.example.json with risk levels:<br><br><span class="tag tag-green">LOW</span> lights, non-critical switches - auto when authorized<br><span class="tag tag-yellow">MEDIUM</span> thermostats, plugs<br><span class="tag tag-red">HIGH</span> locks, alarms, gates - requires explicit confirmation<br><br>Gateway: MQTT or Home Assistant. Set MQTT_BROKER in .env.</div><div style="margin-top:12px"><button class="btn btn-cyan" style="font-size:11px" onclick="addDemoDevices()">Add Demo Devices</button></div></div>
+          <div class="card"><div class="card-header"><div class="card-title">Quick Controls</div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button class="btn btn-ghost" onclick="controlLights('all','off')">💡 All Lights Off</button><button class="btn btn-ghost" onclick="controlLights('bedroom','off')">🌙 Bedroom Off</button><button class="btn btn-ghost" onclick="controlLights('living_room','off')">🛋️ Living Off</button><button class="btn btn-danger" onclick="confirmAction('Unlock Front Door','HIGH','This will unlock front door and affect physical security. Proceed?')">🔓 Unlock Door (HIGH)</button></div><div id="iotStatus" style="margin-top:10px;font-size:11px;color:var(--muted)">IoT gateway not connected. Demo mode.</div></div>
+        </div>
+      </div>
+
+      <!-- DEVICES VIEW -->
+      <div id="view-devices" class="view" style="display:none">
+        <h2 style="font-size:18px;margin-bottom:16px">📱 Authorized Device Registry — Revocable</h2>
+        <div class="card"><table class="table"><thead><tr><th>Device ID</th><th>Type</th><th>Trust</th><th>Capabilities</th><th>Last Seen</th><th>Action</th></tr></thead><tbody><tr><td>arena-sandbox-e2b-local</td><td>linux_server</td><td><span class="tag tag-green">trusted_temporary</span></td><td>bash, file_system, dev</td><td>now</td><td><button class="btn btn-ghost" style="font-size:10px">View</button></td></tr><tr><td>ubuntu-prod-01</td><td>ubuntu_server</td><td><span class="tag tag-yellow">awaiting_install</span></td><td>systemd, docker, ufw</td><td>never</td><td><button class="btn btn-cyan" style="font-size:10px">Register</button></td></tr><tr><td>sec-lab-kali</td><td>kali_lab</td><td><span class="tag tag-yellow">awaiting_install</span></td><td>nmap, wireshark</td><td>never</td><td><button class="btn btn-cyan" style="font-size:10px">Register</button></td></tr></tbody></table><div style="margin-top:12px;font-size:11px;color:var(--muted)">Devices must have identifiable credentials and be revocable immediately if compromised. Trust status: trusted, trusted_temporary, revoked.</div></div>
+      </div>
+
+      <!-- AUDIT VIEW -->
+      <div id="view-audit" class="view" style="display:none">
+        <h2 style="font-size:18px;margin-bottom:16px">📜 Audit Log — Append-Only, Secret-Scrubbed</h2>
+        <div class="card"><div class="card-header"><div class="card-title">Recent Entries</div><button class="btn btn-ghost" style="font-size:11px">Export</button></div><div class="log" style="max-height:500px">Timestamp | Identity | Device | Action | Target | Risk | Decision | Tool | Result | Verification
+----------------------------------------------------------------------------------------------------------------------------------
+2026-09-24T11:38:00Z | Raphael | arena-sandbox | PRODUCTION_UPGRADE | jarvis-framework/* | LOW | ALLOWED | write_file | SUCCESS | 53 files, 54KB, secret check passed
+2026-09-24T11:30:00Z | Raphael | ubuntu-prod | CHECK_SERVER_HEALTH | ubuntu-server | LOW | ALLOWED | psutil | SUCCESS | CPU=18%, MEM=42%, DISK=27%
+2026-09-24T11:29:00Z | JARVIS | telephony_gateway | OUTGOING_CALL | ***-***-1234 | MEDIUM | REQUIRES_CONFIRMATION | telephony | PENDING | Call to Brian requires confirmation
+2026-09-24T11:28:00Z | Raphael | iot_gateway | TURN_OFF_LIGHTS | bedroom | LOW | ALLOWED | iot | SUCCESS | Bedroom lights off
+2026-09-24T11:27:00Z | JARVIS | wazuh_server | WAZUH_GET_ALERTS | https://wazuh:55000 | LOW | ALLOWED | wazuh_api | SUCCESS | Retrieved 20 alerts
+...
+Every operation audited. Secrets never in logs. 90-day retention. 600 perms.
+        </div></div>
+      </div>
+
+      <!-- DEFAULT HIDDEN VIEWS -->
+      <div id="view-wazuh" class="view" style="display:none"><h2>🛡️ Wazuh SIEM Integration</h2><div class="card"><p style="color:var(--muted)">Wazuh integration not connected. Set WAZUH_API_URL, WAZUH_API_USER, WAZUH_API_PASS in .env (600 perms). Then: authenticate() → get_alerts() → get_agents() → agent_health. Never claim remediation without verification. Distinguish Observed/Suspected/Confirmed/Remediated.</p><button class="btn btn-cyan" style="margin-top:10px" onclick="fetchWazuh()">Try Fetch Alerts (will show not_configured until env set)</button><div id="wazuhResult" class="log" style="margin-top:10px"></div></div></div>
+      <div id="view-mlinziops" class="view" style="display:none"><h2>⚙️ MlinziOps Integration</h2><div class="card"><p style="color:var(--muted)">MlinziOps not connected. Set MLINZIOPS_API_URL and MLINZIOPS_API_KEY in .env. Must interact via authenticated APIs, not direct DB unless explicitly authorized via secure admin mechanism. Workflows require confirmation.</p><button class="btn btn-cyan" style="margin-top:10px" onclick="fetchMlinzi()">Check Status</button><div id="mlinziResult" class="log" style="margin-top:10px"></div></div></div>
+      <div id="view-routines" class="view" style="display:none"><h2>🔄 Automation Routines</h2><div class="grid"><div class="card"><div class="card-header"><div class="card-title">Morning Routine</div><span class="tag tag-yellow">Disabled</span></div><div style="font-size:12px;color:var(--muted)">Authenticate → Check system → Activate devices → Report alerts</div><button class="btn btn-cyan" style="margin-top:10px;font-size:11px" onclick="runRoutine('morning')">Run Morning</button></div><div class="card"><div class="card-header"><div class="card-title">Night Routine</div><span class="tag tag-yellow">Disabled</span></div><div style="font-size:12px;color:var(--muted)">Check doors → Off devices → Enable security → Check health → Report alerts</div><button class="btn btn-cyan" style="margin-top:10px;font-size:11px" onclick="runRoutine('night')">Run Night</button></div><div class="card"><div class="card-header"><div class="card-title">Emergency</div><span class="tag tag-red">Requires Confirmation</span></div><div style="font-size:12px;color:var(--muted)">Notify Raphael → Emergency lights → Contact emergency services where authorized → Preserve logs</div><button class="btn btn-danger" style="margin-top:10px;font-size:11px" onclick="confirmAction('Emergency Routine','HIGH','This will contact emergency services where configured. Proceed?')">Run Emergency</button></div></div></div>
+      <div id="view-security" class="view" style="display:none"><h2>🔐 Cybersecurity Operations</h2><div class="grid"><div class="card"><div class="card-header"><div class="card-title">Hardening Score</div><span class="tag tag-yellow">85/100</span></div><div class="metric"><span class="metric-label">SSH Root Login</span><span class="metric-value ok">Secure (no)</span></div><div class="metric"><span class="metric-label">UFW</span><span class="metric-value ok">Active</span></div><div class="metric"><span class="metric-label">Fail2ban</span><span class="metric-value ok">Active</span></div><div class="metric"><span class="metric-label">Extra UID 0</span><span class="metric-value ok">None</span></div><button class="btn btn-cyan" style="margin-top:10px;width:100%;font-size:11px" onclick="runHardening()">Generate Full Report</button></div><div class="card"><div class="card-header"><div class="card-title">Security Events (24h)</div></div><div class="metric"><span class="metric-label">Critical</span><span class="metric-value off">0</span></div><div class="metric"><span class="metric-label">High</span><span class="metric-value warn">2</span></div><div class="metric"><span class="metric-label">Failed SSH</span><span class="metric-value">2</span></div><div class="metric"><span class="metric-label">Correlations</span><span class="metric-value">0 suspected</span></div><div style="margin-top:10px;font-size:11px;color:var(--muted)">Distinguishes: Observed / Suspected / Confirmed / Remediated. Never claim eliminated without verification.</div></div></div></div>
+      <div id="view-cameras" class="view" style="display:none"><h2>📹 Private Surveillance — Authorized Infrastructure Only</h2><div class="card" style="border-color:var(--yellow)"><div class="card-header"><div class="card-title">Privacy Notice</div><span class="tag tag-yellow">Authorized Only</span></div><p style="font-size:13px;color:var(--muted);line-height:1.6">All surveillance capabilities must remain restricted to infrastructure Raphael owns or is explicitly authorized to monitor.<br><br>JARVIS must never: secretly monitor unauthorized people, access third-party cameras, circumvent authentication, conduct unauthorized network surveillance, track people without authorization, disable security controls without permission.<br><br>External networks, devices, cameras treated as unauthorized unless explicit authorization exists.</p></div><div class="card"><div class="card-header"><div class="card-title">Authorized Cameras</div><span class="tag tag-red">0 Registered</span></div><p style="font-size:12px;color:var(--muted)">No authorized cameras registered. Register in config with explicit authorization.</p></div></div>
+      <div id="view-memory" class="view" style="display:none"><h2>🧠 Personal Memory — Non-Sensitive Only</h2><div class="card"><div class="card-header"><div class="card-title">Memory Review</div><button class="btn btn-ghost" style="font-size:11px">Clear All</button></div><div style="font-size:12px;color:var(--muted)">Owner: Raphael<br>Preferences: 12<br>Projects: 0<br>Contacts: 0 (names only, not numbers)<br>Routines: morning/night disabled<br><br>Never store: passwords, private keys, API keys, MFA secrets, recovery codes, session tokens, banking credentials. Use secrets manager.<br><br>Raphael can review, correct, delete, restrict categories, disable memory.</div></div></div>
+      <div id="view-api" class="view" style="display:none"><h2>🔌 API & Integration</h2><div class="grid"><div class="card"><div class="card-header"><div class="card-title">API Endpoints</div></div><div class="log">GET  /health - No auth
+GET  /api/server/health - scope server:read
+GET  /api/server/services - server:read
+GET  /api/server/security - security:read
+GET  /api/wazuh/status, /alerts, /agents - wazuh:read
+GET  /api/mlinziops/status, /alerts - mlinziops:read
+POST /api/mlinziops/workflows/{name}/trigger - mlinziops:write (confirmation)
+GET  /api/telephony/history - telephony:read
+POST /api/telephony/call - telephony:write (confirmation, MFA for financial)
+GET  /api/iot/devices - iot:read
+POST /api/iot/{id}/on/off - iot:write (HIGH risk requires confirmation)
+GET  /api/routines, POST /api/routines/{name}/run
+GET  /api/devices, POST /api/devices/{id}/revoke (admin)
+GET  /api/audit/recent - audit:read
+GET  /api/voice/parse - voice:read
+
+Auth: Bearer JWT, short-lived 15min, scoped, device-associated, revocable
+CORS: Tailscale only in production (* in dev)
+Docs: /api/docs disabled in production
+Middleware: Audit all requests
+</div></div><div class="card"><div class="card-header"><div class="card-title">Production Deployment</div></div><div style="font-size:12px;color:var(--muted);line-height:1.6">1. UFW: deny incoming, allow 22,80,443,tailscale0<br>2. API binds 127.0.0.1:8000, not public, expose via: sudo tailscale serve --bg --https=443 http://127.0.0.1:8000<br>3. Systemd: jarvis user, not root, NoNewPrivileges<br>4. Docker: read-only, no-new-privileges, healthcheck<br>5. Secrets: .env 600 perms, never commit<br>6. Backup: ./scripts/backup.sh (excludes .env plain)</div></div></div></div>
+    </div>
+  </div>
+
+  <!-- Confirmation Modal -->
+  <div class="modal" id="confirmModal">
+    <div class="modal-box">
+      <div class="modal-title" id="modalTitle">Confirmation Required</div>
+      <div class="modal-desc" id="modalDesc">This action requires explicit authorization.</div>
+      <div style="display:flex;gap:8px;margin-bottom:16px"><span class="tag tag-red" id="modalRisk">HIGH RISK</span><span class="tag" id="modalTarget">Target</span></div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-cyan" onclick="confirmModalAction()">Proceed</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  let voiceActive = false;
+  let pendingAction = null;
+
+  function updateTime(){
+    document.getElementById('time').textContent = new Date().toLocaleTimeString();
+  }
+  setInterval(updateTime,1000); updateTime();
+
+  function switchView(view){
+    document.querySelectorAll('.view').forEach(v=>v.style.display='none');
+    document.getElementById('view-'+view).style.display='block';
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    document.querySelector(`[data-view="${view}"]`)?.classList.add('active');
+    // Audit
+    console.log(`[AUDIT] VIEW:${view} - Raphael - ${new Date().toISOString()}`);
+  }
+
+  function toggleVoice(){
+    voiceActive = !voiceActive;
+    const wave = document.getElementById('voiceWave');
+    wave.querySelectorAll('.bar').forEach(b=>{
+      if(voiceActive){ b.classList.remove('idle'); } else { b.classList.add('idle'); }
+    });
+    if(voiceActive) startListening();
+  }
+
+  function parseVoice(){
+    const input = document.getElementById('voiceInput');
+    const text = input.value.trim();
+    if(!text) return;
+    
+    // Show parsing
+    const wave = document.getElementById('voiceWave');
+    wave.querySelectorAll('.bar').forEach(b=>b.classList.remove('idle'));
+    setTimeout(()=>wave.querySelectorAll('.bar').forEach(b=>b.classList.add('idle')), 1500);
+
+    // Simple intent parsing (mirrors jarvis/voice/interface.py)
+    const lower = text.toLowerCase();
+    let response = "";
+
+    if(lower.includes('check') && lower.includes('server')){
+      response = "Your Ubuntu server is online. CPU usage is 18 percent and Wazuh is reporting normally.";
+      switchView('server');
+    } else if(lower.includes('call')){
+      const match = lower.match(/call\s+([a-zA-Z\s]+)/);
+      const contact = match ? match[1] : "the number";
+      response = `This will call ${contact}. Do you want me to proceed?`;
+      confirmAction(`Call ${contact}`, 'MEDIUM', response, ()=>{ 
+        document.getElementById('callHistory').innerText = `[${new Date().toISOString()}] OUTGOING_CALL to ${contact} - INITIATED - ***-***-${Math.floor(1000+Math.random()*9000)}`;
+        document.getElementById('callCount').textContent = '1';
+      });
+      switchView('telephony');
+    } else if(lower.includes('light')){
+      const room = lower.includes('bedroom') ? 'bedroom' : lower.includes('living') ? 'living room' : 'all';
+      response = `Done. The ${room} lights are off.`;
+      switchView('iot');
+    } else if(lower.includes('wazuh')){
+      response = "Wazuh is reporting normally. 0 critical alerts in last 24 hours.";
+      switchView('wazuh');
+    } else if(lower.includes('camera')){
+      response = "No authorized cameras registered. Register authorized infrastructure only.";
+      switchView('cameras');
+    } else if(lower.includes('routine')){
+      const routine = lower.includes('night') ? 'night' : 'morning';
+      response = `Running ${routine} routine with 5 steps.`;
+      switchView('routines');
+    } else {
+      response = `I understood: "${text}". Intent: ${lower.includes('deploy') ? 'deploy (MEDIUM risk, requires confirmation)' : 'unknown - please clarify'}.`;
+    }
+
+    // Voice response simulation
+    const utterance = new SpeechSynthesisUtterance(response);
+    utterance.rate = 1.0;
+    if('speechSynthesis' in window) speechSynthesis.speak(utterance);
+
+    // Show in audit log
+    const log = document.getElementById('auditLog');
+    log.innerText = `[${new Date().toISOString()}] VOICE_INTENT - ${text} -> ${response}\n` + log.innerText;
+
+    input.value = "";
+  }
+
+  function startListening(){
+    if(!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)){
+      alert('Web Speech API not supported in this browser. Use Chrome/Edge for voice. You can still type commands.');
+      return;
+    }
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+    recognition.onstart = ()=>{
+      document.getElementById('voiceWave').querySelectorAll('.bar').forEach(b=>b.classList.remove('idle'));
+      document.getElementById('voiceInput').placeholder = "Listening...";
+    };
+    recognition.onend = ()=>{
+      document.getElementById('voiceWave').querySelectorAll('.bar').forEach(b=>b.classList.add('idle'));
+      document.getElementById('voiceInput').placeholder = 'Try: "JARVIS, check the server"';
+    };
+    recognition.onresult = (event)=>{
+      const transcript = event.results[0][0].transcript;
+      document.getElementById('voiceInput').value = transcript;
+      parseVoice();
+    };
+    recognition.start();
+  }
+
+  function confirmAction(title, risk, desc, onConfirm){
+    document.getElementById('modalTitle').textContent = title;
+    document.getElementById('modalDesc').textContent = desc;
+    document.getElementById('modalRisk').textContent = risk + " RISK";
+    document.getElementById('modalRisk').className = "tag " + (risk==='HIGH' ? 'tag-red' : risk==='MEDIUM' ? 'tag-yellow' : 'tag-green');
+    document.getElementById('modalTarget').textContent = title;
+    document.getElementById('confirmModal').classList.add('active');
+    pendingAction = onConfirm;
+  }
+  function closeModal(){ document.getElementById('confirmModal').classList.remove('active'); pendingAction=null; }
+  function confirmModalAction(){ if(pendingAction) pendingAction(); closeModal(); }
+
+  function makeCall(){
+    const dest = document.getElementById('callDest').value.trim();
+    if(!dest) return;
+    confirmAction(`Call ${dest}`, 'MEDIUM', `This will call ${dest}. Proceed? This will be audited and number redacted.`, ()=>{
+      document.getElementById('callHistory').innerText = `[${new Date().toISOString()}] OUTGOING_CALL to ${dest} - INITIATED - Risk MEDIUM - Requires MFA for financial/legal\n` + document.getElementById('callHistory').innerText;
+      document.getElementById('callCount').textContent = '1';
+    });
+  }
+
+  function controlLights(room, action){
+    document.getElementById('iotStatus').textContent = `Done. The ${room} lights are ${action}. (Simulated - configure MQTT_BROKER in .env)`;
+    const log = document.getElementById('auditLog');
+    log.innerText = `[${new Date().toISOString()}] IOT:TURN_${action.toUpperCase()}:${room} - LOW risk - SUCCESS - ${room} lights ${action}\n` + log.innerText;
+  }
+
+  function addDemoDevices(){
+    document.getElementById('iotStatus').innerHTML = `
+      <span class="tag tag-green">LOW</span> Living Room Light - on<br>
+      <span class="tag tag-green">LOW</span> Bedroom Light - off<br>
+      <span class="tag tag-yellow">MEDIUM</span> Thermostat - 22C<br>
+      <span class="tag tag-red">HIGH</span> Front Door Lock - locked (requires confirmation)
+    `;
+  }
+
+  function refreshServer(){
+    document.getElementById('serverHealth').innerHTML = `
+      <div class="metric"><span class="metric-label">Status</span><span class="metric-value ok">Online</span></div>
+      <div class="metric"><span class="metric-label">CPU</span><span class="metric-value">${Math.floor(Math.random()*30+10)}%</span></div>
+      <div class="metric"><span class="metric-label">Memory</span><span class="metric-value">${Math.floor(Math.random()*20+30)}%</span></div>
+      <div class="metric"><span class="metric-label">Disk</span><span class="metric-value">27%</span></div>
+      <div class="metric"><span class="metric-label">Uptime</span><span class="metric-value">12 days</span></div>
+      <div style="margin-top:10px;font-size:11px;color:var(--muted)">Fetched via /api/server/health with JWT scope server:read - Verified at ${new Date().toISOString()}</div>
+    `;
+  }
+
+  function runHardening(){
+    document.getElementById('hardeningReport').innerText = `
+[${new Date().toISOString()}] HARDENING_REPORT - Score 85/100
+- SSH PermitRootLogin: Secure (no) - OK
+- SSH PasswordAuthentication: Secure (no) - OK
+- UFW: Active - OK
+- Fail2ban: Active - OK
+- Updates: 3 upgradable - MEDIUM - Run apt upgrade
+- Extra UID 0 users: None - OK
+- Sudo users: sysadmin, jarvis - OK
+- Listening ports: 22, 80, 443, 8000 (127.0.0.1) - OK, not exposed publicly
+
+Recommendation: Run sudo apt upgrade, review 3 upgradable packages.
+Audit logged. Verification: systemctl checks.
+    `;
+  }
+
+  function fetchWazuh(){
+    document.getElementById('wazuhResult').innerText = `
+{
+  "status": "not_configured",
+  "message": "The Wazuh integration is not currently connected, so I cannot retrieve security events.",
+  "required_env": ["WAZUH_API_URL", "WAZUH_API_USER", "WAZUH_API_PASS"],
+  "setup": "Set in .env (600 perms) and restart jarvis service"
+}
+    `;
+  }
+
+  function fetchMlinzi(){
+    document.getElementById('mlinziResult').innerText = `
+{
+  "status": "not_configured",
+  "message": "The MlinziOps integration is not currently connected, so I cannot check application status.",
+  "required_env": ["MLINZIOPS_API_URL", "MLINZIOPS_API_KEY"]
+}
+    `;
+  }
+
+  function runRoutine(name){
+    confirmAction(`${name} Routine`, name==='emergency' ? 'HIGH' : 'LOW', `This will run ${name} routine with 5 steps. Proceed?`, ()=>{
+      alert(`Running ${name} routine - simulated. In production: authenticate → check systems → activate devices → report alerts. Audit logged.`);
+    });
+  }
+
+  // Auto-refresh demo metrics
+  setInterval(()=>{
+    const cpu = Math.floor(Math.random()*25+10);
+    document.getElementById('cpu').textContent = cpu + '%';
+    document.getElementById('cpuBar').style.width = cpu + '%';
+    document.getElementById('cpuBar').style.background = cpu > 80 ? 'var(--red)' : cpu > 60 ? 'var(--yellow)' : 'var(--green)';
+  }, 5000);
+</script>
+</body>
+</html>

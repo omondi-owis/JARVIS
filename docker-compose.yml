@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  jarvis:
+    build: .
+    container_name: jarvis-prod
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8000:8000"  # Bind to localhost only - expose via Tailscale, not public internet
+    volumes:
+      - ./config:/app/config:ro
+      - ./logs:/app/logs
+      - ./.env:/app/.env:ro
+    env_file:
+      - .env
+    environment:
+      - JARVIS_ENV=production
+      - LOG_LEVEL=INFO
+    networks:
+      - jarvis-net
+    depends_on:
+      - redis
+    # Security options
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+
+  redis:
+    image: redis:7-alpine
+    container_name: jarvis-redis
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    networks:
+      - jarvis-net
+    command: redis-server --requirepass ${REDIS_PASS:-changeme_redis}
+
+  # Optional: Wazuh agent sidecar (if running Wazuh)
+  # wazuh-agent:
+  #   image: wazuh/wazuh-agent:latest
+  #   environment:
+  #     - WAZUH_MANAGER=YOUR_WAZUH_MANAGER_IP
+  #   volumes:
+  #     - /var/ossec:/var/ossec
+
+networks:
+  jarvis-net:
+    driver: bridge
+
+volumes:
+  redis-data:

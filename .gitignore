@@ -1,0 +1,46 @@
+# JARVIS - Security: Never commit secrets
+.env
+.env.*
+*.key
+*.pem
+*.p12
+id_ed25519
+id_rsa
+*.secret
+secrets/
+config/config.json
+config/secrets.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+
+# Logs & Audit (keep structure, ignore content)
+logs/*.log
+logs/*.jsonl
+!logs/.gitkeep
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node (if frontend added later)
+node_modules/
+.next/
+dist/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Tailscale / WireGuard keys
+tailscale.key
+wg*.conf

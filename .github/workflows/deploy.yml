@@ -1,0 +1,25 @@
+name: JARVIS Deploy - Production
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Deploy to Ubuntu Server via Tailscale (example)
+        run: |
+          echo "Deploy via Tailscale SSH or via webhook to MlinziOps"
+          echo "Example:"
+          echo "ssh sysadmin@UBUNTU_TAILSCALE_IP 'cd ~/jarvis && git pull && source .venv/bin/activate && python main.py status && sudo systemctl restart jarvis'"
+          echo "Implement actual deploy with verification - never claim success without verification"
+      
+      - name: Verify deployment
+        run: |
+          echo "After deploy, verify service is active"
+          echo "ssh sysadmin@SERVER 'systemctl is-active jarvis && curl -f http://127.0.0.1:8000/health'"
